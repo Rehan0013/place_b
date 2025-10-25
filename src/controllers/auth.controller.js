@@ -13,11 +13,11 @@ const userRegisterController = async (req, res) => {
   }
 
   try {
-    // ✅ Verify Firebase ID token
+    // Verify Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(firebaseId);
     const firebaseUid = decodedToken.uid;
 
-    // ✅ Get user info from decoded token
+    // Get user info from decoded token
     const email = decodedToken.email;
     const fullName = decodedToken.name;
     const profileImage = decodedToken.picture;
@@ -29,7 +29,7 @@ const userRegisterController = async (req, res) => {
       });
     }
 
-    // ✅ Check if user already exists
+    // Check if user already exists
     const existingUser = await userModel.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -38,7 +38,7 @@ const userRegisterController = async (req, res) => {
       });
     }
 
-    // ✅ Create new user
+    // Create new user
     const user = await userModel.create({
       email,
       fullName,
@@ -47,10 +47,10 @@ const userRegisterController = async (req, res) => {
       role: req.body.role || "student",
     });
 
-    // ✅ Create backend JWT
+    // Create backend JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-    // ✅ Send cookie and response
+    // Send cookie and response
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -85,7 +85,7 @@ const userLoginController = async (req, res) => {
   }
 
   try {
-    // ✅ Verify Firebase ID token
+    // Verify Firebase ID token
     const decodedToken = await admin.auth().verifyIdToken(firebaseId);
     const firebaseUid = decodedToken.uid;
     const email = decodedToken.email;
@@ -97,7 +97,7 @@ const userLoginController = async (req, res) => {
       });
     }
 
-    // ✅ Find existing user
+    // Find existing user
     const user = await userModel.findOne({ email });
 
     if (!user) {
@@ -107,10 +107,10 @@ const userLoginController = async (req, res) => {
       });
     }
 
-    // ✅ Create backend JWT
+    // Create backend JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
 
-    // ✅ Send cookie + response
+    // Send cookie + response
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
