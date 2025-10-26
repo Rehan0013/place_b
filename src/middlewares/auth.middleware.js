@@ -1,82 +1,38 @@
-const userModel = require("../models/user.model");
-const admin = require("../config/firebase");
 const jwt = require("jsonwebtoken");
 
-const userRegisterController = async (req, res) => {
-  const { email, fullName, profileImage, firebaseId, role } = req.body;
+const userModel = require("../models/user.model");
 
-  if (!email || !fullName || !firebaseId) {
-    return res.status(400).json({
+const authMiddleware = async (req, res, next) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    return res.status(401).json({
       success: false,
-      message: "Some fields are missing",
+      message: "Unauthorized - No token provided",
     });
   }
 
   try {
-    // ✅ Verify Firebase ID token
-    const decodedToken = await admin.auth().verifyIdToken(firebaseId);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await userModel.findById(decoded.id);
 
-    if (!decodedToken || !decodedToken.email) {
+    if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Invalid Firebase ID token",
+        message: "Unauthorized - Invalid token",
       });
     }
 
-    // ✅ Check if the email from Firebase matches the request email
-    if (decodedToken.email !== email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email mismatch with Firebase account",
-      });
-    }
-
-    // ✅ Check if user already exists
-    const existingUser = await userModel.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "User already exists",
-      });
-    }
-
-    // ✅ Create user
-    const user = await userModel.create({
-      email,
-      fullName,
-      profileImage,
-      firebaseId: decodedToken.uid, // store Firebase UID, not token
-      role,
-    });
-
-    // ✅ Generate your own JWT
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "User registered successfully",
-      data: user,
-      token,
-    });
+    req.user = user;
+    next();
   } catch (error) {
-    console.error("Firebase verification failed:", error);
-    res.status(500).json({
+    return res.status(401).json({
       success: false,
-      message: "User registration failed",
-      error: error.message,
+      message: "Unauthorized - Invalid token",
     });
   }
 };
 
 module.exports = {
-  userRegisterController,
+  authMiddleware,
 };

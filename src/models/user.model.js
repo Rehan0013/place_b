@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       unique: true,
-      require: true,
+      required: true,
     },
     role: {
       type: String,
@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     firebaseId: {
       type: String,
       unique: true,
-      require: true,
+      required: true,
     },
     profileImage: {
       type: String,
