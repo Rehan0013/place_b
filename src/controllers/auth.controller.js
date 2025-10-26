@@ -142,4 +142,27 @@ const userLogoutController = async (req, res) => {
   });
 };
 
-module.exports = { userRegisterController, userLoginController, userLogoutController };
+const userDetailsController = async (req, res) => {
+  const userId = req.user._id;
+
+  try {
+    const user = await userModel.findById(userId);
+
+    res.status(200).json({
+      message: "user details received",
+      user: user,
+    });
+  } catch (error) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized - Invalid token",
+    });
+  }
+};
+
+module.exports = {
+  userRegisterController,
+  userLoginController,
+  userLogoutController,
+  userDetailsController,
+};
